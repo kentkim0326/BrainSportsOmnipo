@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OmniSwap — The Brain Sports DEX</title>
+<style>
+  :root {
+    --navy: #0A1628;
+    --panel: #0F2040;
+    --panel2: #162848;
+    --cyan: #00D4FF;
+    --cyan-dim: rgba(0,212,255,0.12);
+    --cyan-mid: rgba(0,212,255,0.25);
+    --gold: #E8A020;
+    --gold-dim: rgba(232,160,32,0.15);
+    --text: #E8F0F8;
+    --sub: #7A9CC4;
+    --border: rgba(0,212,255,0.18);
+    --border2: rgba(232,160,32,0.2);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--navy);
+    color: var(--text);
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── TICKER ── */
+  .ticker-wrap {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+    height: 36px;
+    display: flex;
+    align-items: center;
+  }
+  .ticker-track {
+    display: flex;
+    gap: 64px;
+    animation: ticker 28s linear infinite;
+    white-space: nowrap;
+  }
+  .ticker-track span {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--sub);
+    letter-spacing: 0.04em;
+  }
+  .ticker-track span b { color: var(--cyan); }
+  .ticker-track span.up b { color: #34d399; }
+  .ticker-track span.down b { color: #f87171; }
+  @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,22,40,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    height: 64px;
+  }
+  .nav-logo {
+    font-family: 'Courier New', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--cyan);
+    letter-spacing: 0.05em;
+    text-decoration: none;
+  }
+  .nav-logo span { color: var(--gold); }
+  .nav-links { display: flex; gap: 32px; align-items: center; }
+  .nav-links a {
+    color: var(--sub);
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta {
+    background: var(--cyan);
+    color: var(--navy) !important;
+    font-weight: 700;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-size: 13px !important;
+    transition: opacity 0.2s !important;
+  }
+  .nav-cta:hover { opacity: 0.85; }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 24px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 20%, rgba(0,212,255,0.07) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 80% 80%, rgba(232,160,32,0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    padding: 6px 16px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--cyan-dim);
+  }
+  .hero h1 {
+    font-family: 'Courier New', monospace;
+    font-size: clamp(36px, 6vw, 72px);
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+    max-width: 800px;
+  }
+  .hero h1 .accent { color: var(--cyan); }
+  .hero h1 .gold { color: var(--gold); }
+  .hero-sub {
+    font-size: 18px;
+    color: var(--sub);
+    max-width: 520px;
+    margin-bottom: 48px;
+    line-height: 1.7;
+  }
+
+  /* ── COUNTDOWN ── */
+  .countdown-wrap {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 40px;
+    margin-bottom: 48px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .countdown-label {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--sub);
+    text-transform: uppercase;
+  }
+  .countdown-clocks {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .clock-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 70px;
+  }
+  .clock-num {
+    font-family: 'Courier New', monospace;
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--cyan);
+    line-height: 1;
+    letter-spacing: 0.04em;
+    background: var(--cyan-dim);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    min-width: 78px;
+    text-align: center;
+  }
+  .clock-num.gold-num { color: var(--gold); background: var(--gold-dim); border-color: var(--border2); }
+  .clock-unit small {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--sub);
+    text-transform: uppercase;
+  }
+  .clock-sep {
+    font-family: 'Courier New', monospace;
+    font-size: 36px;
+    color: var(--sub);
+    margin-bottom: 18px;
+    opacity: 0.5;
+  }
+  .countdown-event {
+    font-size: 13px;
+    color: var(--sub);
+  }
+  .countdown-event b { color: var(--gold); }
+
+  /* ── CTA BUTTONS ── */
+  .hero-ctas { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+  .btn-primary {
+    background: var(--cyan);
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 15px;
+    padding: 14px 32px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.15s;
+    display: inline-block;
+  }
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    font-weight: 600;
+    font-size: 15px;
+    padding: 13px 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s, transform 0.15s;
+    display: inline-block;
+  }
+  .btn-secondary:hover { border-color: var(--cyan); color: var(--cyan); transform: translateY(-1px); }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 40px;
+    display: flex;
+    justify-content: center;
+    gap: 64px;
+    flex-wrap: wrap;
+  }
+  .stat-item { text-align: center; }
+  .stat-num {
+    font-family: 'Courier New', monospace;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--cyan);
+    line-height: 1;
+  }
+  .stat-num.gold { color: var(--gold); }
+  .stat-label { font-size: 12px; color: var(--sub); margin-top: 6px; letter-spacing: 0.04em; }
+
+  /* ── SECTIONS ── */
+  section { padding: 88px 40px; max-width: 1100px; margin: 0 auto; }
+  .section-eyebrow {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .section-eyebrow.gold-eye { color: var(--gold); }
+  h2 {
+    font-family: 'Courier New', monospace;
+    font-size: clamp(24px, 3.5vw, 40px);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 16px;
+    letter-spacing: -0.01em;
+  }
+  .section-desc { font-size: 17px; color: var(--sub); max-width: 560px; line-height: 1.7; margin-bottom: 56px; }
+
+  /* ── HOW IT WORKS ── */
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2px;
+    background: var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .step-card {
+    background: var(--panel);
+    padding: 32px 28px;
+    position: relative;
+  }
+  .step-card:hover { background: var(--panel2); }
+  .step-num {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: var(--cyan);
+    letter-spacing: 0.14em;
+    margin-bottom: 16px;
+    opacity: 0.7;
+  }
+  .step-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 10px; line-height: 1.3; }
+  .step-card p { font-size: 14px; color: var(--sub); line-height: 1.6; }
+  .step-icon {
+    font-size: 28px;
+    margin-bottom: 14px;
+    display: block;
+  }
+
+  /* ── FEATURES GRID ── */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  .feature-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px;
+    transition: border-color 0.25s, transform 0.2s;
+  }
+  .feature-card:hover { border-color: var(--cyan); transform: translateY(-3px); }
+  .feature-card.gold-card { border-color: var(--border2); }
+  .feature-card.gold-card:hover { border-color: var(--gold); }
+  .feature-icon { font-size: 30px; margin-bottom: 16px; display: block; }
+  .feature-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+  .feature-card p { font-size: 14px; color: var(--sub); line-height: 1.7; }
+  .feature-tag {
+    display: inline-block;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    margin-top: 14px;
+    letter-spacing: 0.06em;
+  }
+  .tag-cyan { background: var(--cyan-dim); color: var(--cyan); border: 1px solid var(--border); }
+  .tag-gold { background: var(--gold-dim); color: var(--gold); border: 1px solid var(--border2); }
+
+  /* ── TOKENOMICS ── */
+  .tokenomics-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+  .token-chart-area { display: flex; flex-direction: column; gap: 12px; }
+  .token-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .token-bar-label { font-size: 13px; color: var(--sub); min-width: 170px; }
+  .token-bar-track {
+    flex: 1;
+    height: 10px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .token-bar-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 1s cubic-bezier(0.4,0,0.2,1);
+  }
+  .token-bar-pct { font-family: 'Courier New', monospace; font-size: 13px; color: var(--text); min-width: 36px; text-align: right; }
+  .token-details { display: flex; flex-direction: column; gap: 20px; }
+  .token-detail-item {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .token-detail-item h4 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  .token-detail-item p { font-size: 13px; color: var(--sub); line-height: 1.6; }
+  .token-supply {
+    background: var(--cyan-dim);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .token-supply-num {
+    font-family: 'Courier New', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--cyan);
+  }
+  .token-supply-label { font-size: 12px; color: var(--sub); margin-top: 4px; letter-spacing: 0.06em; }
+
+  /* ── ROADMAP ── */
+  .roadmap-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    position: relative;
+  }
+  .roadmap-grid::before {
+    content: '';
+    position: absolute;
+    top: 28px;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--cyan), var(--gold));
+    opacity: 0.3;
+    z-index: 0;
+  }
+  .roadmap-item {
+    padding: 0 16px 32px;
+    position: relative;
+    z-index: 1;
+  }
+  .roadmap-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--panel);
+    margin: 0 auto 20px;
+    position: relative;
+    z-index: 2;
+  }
+  .roadmap-dot.active { background: var(--cyan); box-shadow: 0 0 12px rgba(0,212,255,0.5); }
+  .roadmap-dot.upcoming { background: var(--gold); box-shadow: 0 0 12px rgba(232,160,32,0.5); }
+  .roadmap-dot.future { background: var(--panel2); border-color: var(--sub); }
+  .roadmap-phase {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: var(--cyan);
+    letter-spacing: 0.12em;
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .roadmap-phase.gold-phase { color: var(--gold); }
+  .roadmap-date { font-size: 13px; font-weight: 700; margin-bottom: 10px; text-align: center; }
+  .roadmap-items { list-style: none; }
+  .roadmap-items li {
+    font-size: 12px;
+    color: var(--sub);
+    padding: 3px 0;
+    padding-left: 14px;
+    position: relative;
+    line-height: 1.5;
+  }
+  .roadmap-items li::before { content: '›'; position: absolute; left: 0; color: var(--cyan); }
+
+  /* ── EMAIL CAPTURE ── */
+  .cta-section {
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+    padding: 80px 40px;
+  }
+  .cta-section h2 { margin-bottom: 12px; }
+  .cta-section p { color: var(--sub); font-size: 16px; margin-bottom: 36px; }
+  .email-form {
+    display: flex;
+    gap: 12px;
+    max-width: 460px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .email-input {
+    flex: 1;
+    min-width: 240px;
+    background: var(--navy);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 13px 18px;
+    font-size: 15px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .email-input::placeholder { color: var(--sub); }
+  .email-input:focus { border-color: var(--cyan); }
+  .email-form button {
+    background: var(--gold);
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 15px;
+    padding: 13px 28px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .email-form button:hover { opacity: 0.88; }
+  .email-note { font-size: 12px; color: var(--sub); margin-top: 12px; }
+
+  /* ── DISCIPLINES ── */
+  .disciplines-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 36px;
+  }
+  .disc-pill {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    padding: 8px 18px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--sub);
+    background: var(--panel);
+    transition: border-color 0.2s, color 0.2s;
+    cursor: default;
+  }
+  .disc-pill:hover { border-color: var(--cyan); color: var(--text); }
+  .disc-pill.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    padding: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  .footer-logo {
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--cyan);
+  }
+  .footer-logo span { color: var(--gold); }
+  .footer-links { display: flex; gap: 24px; }
+  .footer-links a { font-size: 13px; color: var(--sub); text-decoration: none; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--text); }
+  .footer-right { font-size: 12px; color: var(--sub); text-align: right; }
+
+  /* ── DIVIDER ── */
+  .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { padding: 0 20px; }
+    .nav-links { display: none; }
+    section { padding: 60px 20px; }
+    .tokenomics-wrap { grid-template-columns: 1fr; }
+    .roadmap-grid { grid-template-columns: 1fr 1fr; }
+    .stats-bar { gap: 32px; padding: 24px 20px; }
+    .countdown-clocks { gap: 4px; }
+    .clock-num { font-size: 30px; min-width: 60px; padding: 6px 8px; }
+    .clock-unit { min-width: 54px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ticker-track { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker-track" id="ticker">
+    <span>$BSO <b class="up">LAUNCHING Q4 2026</b></span>
+    <span>OMNIPO 2027 · SEOUL <b>CHESS · GO · POKER · MAHJONG · SHOGI · E-SPORTS</b></span>
+    <span>BASE NETWORK <b>GAS ~$0.001</b></span>
+    <span>TOTAL SUPPLY <b>1,000,000,000 $BSO</b></span>
+    <span>PRIZE POOL TARGET <b class="up">$500,000+</b></span>
+    <span>OMNISWAP DEX <b>DECENTRALIZED · PERMISSIONLESS · 24/7</b></span>
+    <span>$BSO <b class="up">LAUNCHING Q4 2026</b></span>
+    <span>OMNIPO 2027 · SEOUL <b>CHESS · GO · POKER · MAHJONG · SHOGI · E-SPORTS</b></span>
+    <span>BASE NETWORK <b>GAS ~$0.001</b></span>
+    <span>TOTAL SUPPLY <b>1,000,000,000 $BSO</b></span>
+    <span>PRIZE POOL TARGET <b class="up">$500,000+</b></span>
+    <span>OMNISWAP DEX <b>DECENTRALIZED · PERMISSIONLESS · 24/7</b></span>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">Omni<span>Swap</span></a>
+  <div class="nav-links">
+    <a href="#how">How it works</a>
+    <a href="#token">$BSO Token</a>
+    <a href="#omnipo">Omnipo 2027</a>
+    <a href="#roadmap">Roadmap</a>
+    <a href="#signup" class="nav-cta">Get early access</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="hero-eyebrow">Built on Base Network &nbsp;·&nbsp; Powered by $BSO</div>
+  <h1>The DEX built<br>for <span class="accent">thinking</span> <span class="gold">champions.</span></h1>
+  <p class="hero-sub">OmniSwap is the world's first decentralized exchange purpose-built for brain sports. Trade $BSO, enter tournaments, earn prizes — all on-chain.</p>
+
+  <!-- COUNTDOWN -->
+  <div class="countdown-wrap">
+    <div class="countdown-label">Countdown to Omnipo 2027 · Seoul</div>
+    <div class="countdown-clocks">
+      <div class="clock-unit">
+        <div class="clock-num" id="cd-days">000</div>
+        <small>Days</small>
+      </div>
+      <div class="clock-sep">:</div>
+      <div class="clock-unit">
+        <div class="clock-num" id="cd-hours">00</div>
+        <small>Hours</small>
+      </div>
+      <div class="clock-sep">:</div>
+      <div class="clock-unit">
+        <div class="clock-num" id="cd-mins">00</div>
+        <small>Min</small>
+      </div>
+      <div class="clock-sep">:</div>
+      <div class="clock-unit">
+        <div class="clock-num gold-num" id="cd-secs">00</div>
+        <small>Sec</small>
+      </div>
+    </div>
+    <div class="countdown-event">World championship · <b>10+ disciplines · 1,000+ players · $500K prize pool</b></div>
+  </div>
+
+  <div class="hero-ctas">
+    <a href="#signup" class="btn-primary">Get early access</a>
+    <a href="#how" class="btn-secondary">How it works</a>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-num">2B+</div>
+    <div class="stat-label">Brain sports players worldwide</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num gold">$0.001</div>
+    <div class="stat-label">Avg. gas fee on Base L2</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">10+</div>
+    <div class="stat-label">Disciplines at Omnipo 2027</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num gold">1B</div>
+    <div class="stat-label">Total $BSO supply</div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="section-eyebrow">The mechanism</div>
+  <h2>From wallet to winner's podium.</h2>
+  <p class="section-desc">The complete tournament lifecycle — entry fees, prize pools, and payouts — runs entirely on smart contracts. No middlemen. No delays.</p>
+
+  <div class="steps-grid">
+    <div class="step-card">
+      <div class="step-num">STEP_01</div>
+      <span class="step-icon">🔗</span>
+      <h3>Connect wallet</h3>
+      <p>Connect MetaMask, Coinbase Wallet, or any WalletConnect wallet. One click — no account needed.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">STEP_02</div>
+      <span class="step-icon">🪙</span>
+      <h3>Get $BSO</h3>
+      <p>Swap USDT, ETH, or LOTO for $BSO on OmniSwap DEX. Gas fee under $0.01 on Base Network.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">STEP_03</div>
+      <span class="step-icon">🏆</span>
+      <h3>Enter tournament</h3>
+      <p>Pay entry fee in $BSO. Smart contract locks funds transparently — no organization holds your money.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">STEP_04</div>
+      <span class="step-icon">🧠</span>
+      <h3>Compete</h3>
+      <p>Play Chess, Go, Poker, Mahjong, Shogi, or e-Sports at your level — local, national, or world stage.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">STEP_05</div>
+      <span class="step-icon">💸</span>
+      <h3>Win instantly</h3>
+      <p>Smart contract distributes prizes automatically to winners' wallets. Anywhere in the world. Seconds.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- DISCIPLINES -->
+<section id="omnipo">
+  <div class="section-eyebrow gold-eye">Omnipo 2027 · Seoul</div>
+  <h2>Every discipline.<br>One ecosystem.</h2>
+  <p class="section-desc">Omnipo 2027 is the world's first multi-discipline brain sports world championship — the intellectual equivalent of the Olympic Games.</p>
+
+  <div class="disciplines-row">
+    <div class="disc-pill active">♟ Chess</div>
+    <div class="disc-pill active">⚫ Go (Baduk)</div>
+    <div class="disc-pill active">🀄 Mahjong</div>
+    <div class="disc-pill active">🃏 Poker</div>
+    <div class="disc-pill active">将 Shogi</div>
+    <div class="disc-pill active">🎮 e-Sports</div>
+    <div class="disc-pill">🎲 Backgammon</div>
+    <div class="disc-pill">🧩 Puzzle sports</div>
+    <div class="disc-pill">♞ Checkers</div>
+    <div class="disc-pill">+ more TBA</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:48px;">
+    <div style="background:var(--panel);border:1px solid var(--border2);border-radius:12px;padding:24px;text-align:center;">
+      <div style="font-family:'Courier New',monospace;font-size:36px;font-weight:700;color:var(--gold);">Q2–Q3</div>
+      <div style="font-size:13px;color:var(--sub);margin-top:4px;">2027 event window</div>
+    </div>
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:24px;text-align:center;">
+      <div style="font-family:'Courier New',monospace;font-size:36px;font-weight:700;color:var(--cyan);">30+</div>
+      <div style="font-size:13px;color:var(--sub);margin-top:4px;">Countries participating</div>
+    </div>
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:24px;text-align:center;">
+      <div style="font-family:'Courier New',monospace;font-size:36px;font-weight:700;color:var(--cyan);">1,000+</div>
+      <div style="font-size:13px;color:var(--sub);margin-top:4px;">Players competing</div>
+    </div>
+    <div style="background:var(--panel);border:1px solid var(--border2);border-radius:12px;padding:24px;text-align:center;">
+      <div style="font-family:'Courier New',monospace;font-size:36px;font-weight:700;color:var(--gold);">$500K+</div>
+      <div style="font-size:13px;color:var(--sub);margin-top:4px;">Target prize pool</div>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-eyebrow">Why OmniSwap</div>
+  <h2>Built different.<br>By design.</h2>
+  <p class="section-desc">OmniSwap isn't a generic DEX with a sports skin. Every feature is built around the realities of competitive brain sports.</p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <span class="feature-icon">⚡</span>
+      <h3>Near-zero gas fees</h3>
+      <p>Built on Base Network (Ethereum L2). Swaps cost under $0.01. Tournament entries cost under $0.05. Fees never eat your prize money.</p>
+      <span class="feature-tag tag-cyan">Base L2</span>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🔐</span>
+      <h3>Non-custodial</h3>
+      <p>OmniSwap never holds your funds. Smart contracts hold prize pools. Your wallet is your account. No KYC to trade.</p>
+      <span class="feature-tag tag-cyan">Trustless</span>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🌍</span>
+      <h3>Borderless prizes</h3>
+      <p>A player in Seoul, Lagos, or Buenos Aires gets paid instantly the same way. No SWIFT, no currency conversion, no 5-business-day wait.</p>
+      <span class="feature-tag tag-cyan">Global</span>
+    </div>
+    <div class="feature-card gold-card">
+      <span class="feature-icon">🏢</span>
+      <h3>Sponsor staking</h3>
+      <p>Corporations stake $BSO to fund prize pools and earn naming rights. Transparent on-chain sponsorship for the first time in brain sports history.</p>
+      <span class="feature-tag tag-gold">Unique</span>
+    </div>
+    <div class="feature-card gold-card">
+      <span class="feature-icon">🔥</span>
+      <h3>Deflationary by design</h3>
+      <p>5% of every tournament entry is burned. 10% of DEX fees buy back and burn $BSO. Supply decreases as usage grows.</p>
+      <span class="feature-tag tag-gold">$BSO burn</span>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🗳️</span>
+      <h3>Community governed</h3>
+      <p>$BSO holders vote on new disciplines, fee structures, and treasury spending. The brain sports community runs Omnipo — not a corporation.</p>
+      <span class="feature-tag tag-cyan">Governance</span>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- TOKENOMICS -->
+<section id="token">
+  <div class="section-eyebrow">Token design</div>
+  <h2>$BSO — the currency<br>of competitive intelligence.</h2>
+  <p class="section-desc">1 billion tokens. Real utility from day one. Deflationary mechanics built into every tournament.</p>
+
+  <div class="tokenomics-wrap">
+    <div class="token-chart-area">
+      <div class="token-supply">
+        <div class="token-supply-num">1,000,000,000</div>
+        <div class="token-supply-label">Total $BSO supply · ERC-20 · Base Network</div>
+      </div>
+      <div class="token-bar-row">
+        <div class="token-bar-label">Community &amp; Rewards</div>
+        <div class="token-bar-track"><div class="token-bar-fill" style="width:30%;background:#00D4FF;"></div></div>
+        <div class="token-bar-pct">30%</div>
+      </div>
+      <div class="token-bar-row">
+        <div class="token-bar-label">Ecosystem &amp; Treasury</div>
+        <div class="token-bar-track"><div class="token-bar-fill" style="width:20%;background:#00A8CC;"></div></div>
+        <div class="token-bar-pct">20%</div>
+      </div>
+      <div class="token-bar-row">
+        <div class="token-bar-label">Founder &amp; Team</div>
+        <div class="token-bar-track"><div class="token-bar-fill" style="width:20%;background:#E8A020;"></div></div>
+        <div class="token-bar-pct">20%</div>
+      </div>
+      <div class="token-bar-row">
+        <div class="token-bar-label">Investors (Presale)</div>
+        <div class="token-bar-track"><div class="token-bar-fill" style="width:15%;background:#C07A10;"></div></div>
+        <div class="token-bar-pct">15%</div>
+      </div>
+      <div class="token-bar-row">
+        <div class="token-bar-label">DEX Liquidity Pool</div>
+        <div class="token-bar-track"><div class="token-bar-fill" style="width:10%;background:#4A9A8A;"></div></div>
+        <div class="token-bar-pct">10%</div>
+      </div>
+      <div class="token-bar-row">
+        <div class="token-bar-label">Reserve Fund</div>
+        <div class="token-bar-track"><div class="token-bar-fill" style="width:5%;background:#3A6A6A;"></div></div>
+        <div class="token-bar-pct">5%</div>
+      </div>
+    </div>
+    <div class="token-details">
+      <div class="token-detail-item">
+        <h4>🏆 Tournament entry</h4>
+        <p>All Omnipo events require $BSO. Every player who wants to compete needs to hold $BSO.</p>
+      </div>
+      <div class="token-detail-item">
+        <h4>💧 DEX liquidity</h4>
+        <p>Provide $BSO/USDT or $BSO/ETH liquidity on OmniSwap and earn 0.25% of every trade.</p>
+      </div>
+      <div class="token-detail-item">
+        <h4>🔥 Burn mechanics</h4>
+        <p>5% of every entry fee burned. 10% of protocol revenue buys back and burns. Supply shrinks as platform grows.</p>
+      </div>
+      <div class="token-detail-item">
+        <h4>🗳️ Governance</h4>
+        <p>1 $BSO = 1 vote. Decide which sports are added, how fees are set, and where the treasury goes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ROADMAP -->
+<section id="roadmap">
+  <div class="section-eyebrow">Timeline</div>
+  <h2>Road to Omnipo 2027.</h2>
+  <p class="section-desc">18 months from today to the flagship world championship. Every phase builds toward the event that puts $BSO on the world stage.</p>
+
+  <div class="roadmap-grid">
+    <div class="roadmap-item">
+      <div class="roadmap-dot active"></div>
+      <div class="roadmap-phase">Phase 1</div>
+      <div class="roadmap-date">Q3 2026</div>
+      <ul class="roadmap-items">
+        <li>Legal entity setup</li>
+        <li>Smart contract dev</li>
+        <li>Security audit</li>
+        <li>Community launch</li>
+      </ul>
+    </div>
+    <div class="roadmap-item">
+      <div class="roadmap-dot upcoming"></div>
+      <div class="roadmap-phase">Phase 2</div>
+      <div class="roadmap-date">Q4 2026</div>
+      <ul class="roadmap-items">
+        <li>$BSO presale</li>
+        <li>OmniSwap DEX live</li>
+        <li>Initial liquidity</li>
+        <li>Marketing launch</li>
+      </ul>
+    </div>
+    <div class="roadmap-item">
+      <div class="roadmap-dot future"></div>
+      <div class="roadmap-phase">Phase 3</div>
+      <div class="roadmap-date">Q1 2027</div>
+      <ul class="roadmap-items">
+        <li>Pilot tournaments</li>
+        <li>Sponsor onboarding</li>
+        <li>Media partnerships</li>
+        <li>LOTO listing</li>
+      </ul>
+    </div>
+    <div class="roadmap-item">
+      <div class="roadmap-dot future"></div>
+      <div class="roadmap-phase gold-phase">Phase 4</div>
+      <div class="roadmap-date">Q2–Q3 2027</div>
+      <ul class="roadmap-items">
+        <li>Omnipo 2027 Seoul</li>
+        <li>10+ disciplines</li>
+        <li>$500K prize pool</li>
+        <li>Global broadcast</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- EMAIL CAPTURE -->
+<div class="cta-section" id="signup">
+  <div class="section-eyebrow" style="text-align:center;margin-bottom:16px;">Early access</div>
+  <h2>Be first when $BSO launches.</h2>
+  <p>Join the waitlist. Get early access to the presale, pilot tournaments, and OmniSwap DEX beta.</p>
+  <form class="email-form" onsubmit="handleSubmit(event)">
+    <input type="email" class="email-input" placeholder="your@email.com" required id="email-input">
+    <button type="submit">Join waitlist</button>
+  </form>
+  <p class="email-note" id="form-note">No spam. Early supporters get presale priority and exclusive $BSO allocation.</p>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Omni<span>Swap</span></div>
+  <div class="footer-links">
+    <a href="#">Whitepaper</a>
+    <a href="#">Tokenomics</a>
+    <a href="#">GitHub</a>
+    <a href="#">Twitter/X</a>
+    <a href="#">Telegram</a>
+    <a href="#">Discord</a>
+  </div>
+  <div class="footer-right">
+    <div>© 2026 Brain Sports Omnipo Foundation</div>
+    <div style="margin-top:4px;">Built on Base Network &nbsp;·&nbsp; $BSO ERC-20</div>
+  </div>
+</footer>
+
+<script>
+  // ── Countdown ──────────────────────────────────────────────
+  function updateCountdown() {
+    const target = new Date('2027-06-01T09:00:00+09:00').getTime();
+    const now = Date.now();
+    const diff = Math.max(0, target - now);
+    const days  = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins  = Math.floor((diff % 3600000) / 60000);
+    const secs  = Math.floor((diff % 60000) / 1000);
+    document.getElementById('cd-days').textContent  = String(days).padStart(3,'0');
+    document.getElementById('cd-hours').textContent = String(hours).padStart(2,'0');
+    document.getElementById('cd-mins').textContent  = String(mins).padStart(2,'0');
+    document.getElementById('cd-secs').textContent  = String(secs).padStart(2,'0');
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  // ── Form ───────────────────────────────────────────────────
+  function handleSubmit(e) {
+    e.preventDefault();
+    const email = document.getElementById('email-input').value;
+    const note = document.getElementById('form-note');
+    note.style.color = '#34d399';
+    note.textContent = '✓ You\'re on the list! We\'ll be in touch before the presale opens.';
+    document.getElementById('email-input').value = '';
+  }
+
+  // ── Scroll reveal ──────────────────────────────────────────
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.feature-card, .step-card, .roadmap-item, .token-detail-item').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    observer.observe(el);
+  });
+</script>
+</body>
+</html>
